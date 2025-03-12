@@ -65,7 +65,58 @@
 
   <script>
     "use strict";
-    // Код писать здесь
-    console.log("It works!");
+  // Находим элементы DOM
+  const nameInput = document.querySelector('.add-form-name');
+  const textInput = document.querySelector('.add-form-text');
+  const addButton = document.querySelector('.add-form-button');
+  const commentsList = document.querySelector('.comments');
+
+  // Блокируем кнопку при загрузке
+  addButton.disabled = true;
+
+  // Функция валидации
+  const validateForm = () => {
+    const isNameValid = nameInput.value.trim().length > 0;
+    const isTextValid = textInput.value.trim().length > 0;
+    addButton.disabled = !(isNameValid && isTextValid);
+  };
+
+  // Обработчики событий
+  nameInput.addEventListener('input', validateForm);
+  textInput.addEventListener('input', validateForm);
+
+  addButton.addEventListener('click', () => {
+    // Собираем данные
+    const userName = nameInput.value.trim();
+    const commentText = textInput.value.trim();
+    const commentDate = new Date().toLocaleString();
+
+    // Шаблон комментария (на основе существующего в HTML)
+    const commentTemplate = `
+      <div class="comment">
+        <div class="comment-header">
+          <div>${userName}</div>
+          <div>${commentDate}</div>
+        </div>
+        <div class="comment-body">
+          ${commentText.replace(/\n/g, '<br>')}
+        </div>
+        <div class="comment-footer">
+          <div class="likes">
+            <span class="likes-counter">0</span>
+            <button class="like-button"></button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Добавляем комментарий строго через innerHTML
+    commentsList.innerHTML += commentTemplate;
+
+    // Очищаем форму
+    nameInput.value = '';
+    textInput.value = '';
+    addButton.disabled = true;
+  });
   </script>
 </html>
