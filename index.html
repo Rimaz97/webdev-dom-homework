@@ -65,58 +65,92 @@
 
   <script>
     "use strict";
-  // Находим элементы DOM
-  const nameInput = document.querySelector('.add-form-name');
-  const textInput = document.querySelector('.add-form-text');
-  const addButton = document.querySelector('.add-form-button');
-  const commentsList = document.querySelector('.comments');
-
-  // Блокируем кнопку при загрузке
-  addButton.disabled = true;
-
-  // Функция валидации
-  const validateForm = () => {
-    const isNameValid = nameInput.value.trim().length > 0;
-    const isTextValid = textInput.value.trim().length > 0;
-    addButton.disabled = !(isNameValid && isTextValid);
-  };
-
-  // Обработчики событий
-  nameInput.addEventListener('input', validateForm);
-  textInput.addEventListener('input', validateForm);
-
-  addButton.addEventListener('click', () => {
-    // Собираем данные
-    const userName = nameInput.value.trim();
-    const commentText = textInput.value.trim();
-    const commentDate = new Date().toLocaleString();
-
-    // Шаблон комментария (на основе существующего в HTML)
-    const commentTemplate = `
-      <div class="comment">
-        <div class="comment-header">
-          <div>${userName}</div>
-          <div>${commentDate}</div>
-        </div>
-        <div class="comment-body">
-          ${commentText.replace(/\n/g, '<br>')}
-        </div>
-        <div class="comment-footer">
-          <div class="likes">
-            <span class="likes-counter">0</span>
-            <button class="like-button"></button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // Добавляем комментарий строго через innerHTML
-    commentsList.innerHTML += commentTemplate;
-
-    // Очищаем форму
-    nameInput.value = '';
-    textInput.value = '';
+  
+    // Находим элементы DOM
+    const nameInput = document.querySelector('.add-form-name');
+    const textInput = document.querySelector('.add-form-text');
+    const addButton = document.querySelector('.add-form-button');
+    const commentsList = document.querySelector('.comments');
+  
+    // Блокируем кнопку при загрузке
     addButton.disabled = true;
-  });
+  
+    // Инициализируем лайки для существующих комментариев
+    document.querySelectorAll('.comment').forEach(comment => {
+      const likesCounter = comment.querySelector('.likes-counter');
+      const likeButton = comment.querySelector('.like-button');
+      
+      likesCounter.dataset.likes = likesCounter.textContent;
+      likeButton.dataset.liked = likeButton.classList.contains('-active-like') ? 'true' : 'false';
+    });
+  
+    // Валидация формы
+    const validateForm = () => {
+      addButton.disabled = !(nameInput.value.trim() && textInput.value.trim());
+    };
+  
+    nameInput.addEventListener('input', validateForm);
+    textInput.addEventListener('input', validateForm);
+
+    // Обработчик нажатия Enter
+    textInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+        if (!addButton.disabled) {
+        addButton.click();
+        }
+      }
+    });
+  
+    // Обработчик лайков (делегирование событий)
+    commentsList.addEventListener('click', (e) => {
+      if (e.target.classList.contains('like-button')) {
+        const likesCounter = e.target.previousElementSibling;
+        const isLiked = e.target.dataset.liked === 'true';
+        
+        // Обновляем данные
+        e.target.dataset.liked = !isLiked;
+        likesCounter.textContent = Number(likesCounter.textContent) + (isLiked ? -1 : 1);
+        
+        // Обновляем стиль
+        e.target.classList.toggle('-active-like');
+      }
+    });
+  
+    // Добавление нового комментария
+    addButton.addEventListener('click', () => {
+      const commentDate = new Date().toLocaleDateString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+  
+      const commentHTML = `
+        <li class="comment">
+          <div class="comment-header">
+            <div>${nameInput.value.trim()}</div>
+            <div>${commentDate}</div>
+          </div>
+          <div class="comment-body">
+            <div class="comment-text">${textInput.value.trim().replace(/\n/g, '<br>')}</div>
+          </div>
+          <div class="comment-footer">
+            <div class="likes">
+              <span class="likes-counter" data-likes="0">0</span>
+              <button class="like-button" data-liked="false"></button>
+            </div>
+          </div>
+        </li>
+      `;
+  
+      commentsList.insertAdjacentHTML('beforeend', commentHTML);
+      
+      // Очищаем форму
+      nameInput.value = '';
+      textInput.value = '';
+      addButton.disabled = true;
+    });
   </script>
 </html>
