@@ -66,22 +66,62 @@
   <script>
     "use strict";
   
+    // Исходный массив комментариев
+    let comments = [
+      {
+        id: 1,
+        name: 'Глеб Фокин',
+        text: 'Это будет первый комментарий на этой странице',
+        date: '12.02.22 12:18',
+        likes: 3,
+        isLiked: false
+      },
+      {
+        id: 2,
+        name: 'Варвара Н.',
+        text: 'Мне нравится как оформлена эта страница! ❤',
+        date: '13.02.22 19:22',
+        likes: 75,
+        isLiked: true
+      }
+    ];
+  
     // Находим элементы DOM
     const nameInput = document.querySelector('.add-form-name');
     const textInput = document.querySelector('.add-form-text');
     const addButton = document.querySelector('.add-form-button');
     const commentsList = document.querySelector('.comments');
   
-    // Блокируем кнопку при загрузке
-    addButton.disabled = true;
+    // Функция рендера комментариев
+    function renderComments() {
+      commentsList.innerHTML = comments.map(comment => `
+        <li class="comment">
+          <div class="comment-header">
+            <div>${comment.name}</div>
+            <div>${comment.date}</div>
+          </div>
+          <div class="comment-body">
+            <div class="comment-text">${comment.text}</div>
+          </div>
+          <div class="comment-footer">
+            <div class="likes">
+              <span class="likes-counter">${comment.likes}</span>
+              <button class="like-button ${comment.isLiked ? '-active-like' : ''}" 
+                data-id="${comment.id}"></button>
+            </div>
+          </div>
+        </li>
+      `).join('');
+    }
   
-    // Инициализируем лайки для существующих комментариев
-    document.querySelectorAll('.comment').forEach(comment => {
-      const likesCounter = comment.querySelector('.likes-counter');
-      const likeButton = comment.querySelector('.like-button');
-      
-      likesCounter.dataset.likes = likesCounter.textContent;
-      likeButton.dataset.liked = likeButton.classList.contains('-active-like') ? 'true' : 'false';
+    // Обработчик лайков
+    commentsList.addEventListener('click', (e) => {
+      if (e.target.classList.contains('like-button')) {
+        const comment = comments.find(c => c.id === Number(e.target.dataset.id));
+        comment.isLiked = !comment.isLiked;
+        comment.likes += comment.isLiked ? 1 : -1;
+        renderComments();
+      }
     });
   
     // Валидация формы
@@ -89,68 +129,42 @@
       addButton.disabled = !(nameInput.value.trim() && textInput.value.trim());
     };
   
+    // Обработчики ввода
     nameInput.addEventListener('input', validateForm);
     textInput.addEventListener('input', validateForm);
-
-    // Обработчик нажатия Enter
-    textInput.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-        if (!addButton.disabled) {
-        addButton.click();
-        }
-      }
-    });
   
-    // Обработчик лайков (делегирование событий)
-    commentsList.addEventListener('click', (e) => {
-      if (e.target.classList.contains('like-button')) {
-        const likesCounter = e.target.previousElementSibling;
-        const isLiked = e.target.dataset.liked === 'true';
-        
-        // Обновляем данные
-        e.target.dataset.liked = !isLiked;
-        likesCounter.textContent = Number(likesCounter.textContent) + (isLiked ? -1 : 1);
-        
-        // Обновляем стиль
-        e.target.classList.toggle('-active-like');
-      }
-    });
-  
-    // Добавление нового комментария
+    // Обработчик добавления комментария
     addButton.addEventListener('click', () => {
-      const commentDate = new Date().toLocaleDateString('ru-RU', {
-        day: '2-digit',
-        month: '2-digit',
-        year: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
+      comments.push({
+        id: Date.now(),
+        name: nameInput.value.trim(),
+        text: textInput.value.trim(),
+        date: new Date().toLocaleDateString('ru-RU', {
+          day: '2-digit',
+          month: '2-digit',
+          year: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        likes: 0,
+        isLiked: false
       });
-  
-      const commentHTML = `
-        <li class="comment">
-          <div class="comment-header">
-            <div>${nameInput.value.trim()}</div>
-            <div>${commentDate}</div>
-          </div>
-          <div class="comment-body">
-            <div class="comment-text">${textInput.value.trim().replace(/\n/g, '<br>')}</div>
-          </div>
-          <div class="comment-footer">
-            <div class="likes">
-              <span class="likes-counter" data-likes="0">0</span>
-              <button class="like-button" data-liked="false"></button>
-            </div>
-          </div>
-        </li>
-      `;
-  
-      commentsList.insertAdjacentHTML('beforeend', commentHTML);
       
-      // Очищаем форму
+      renderComments();
       nameInput.value = '';
       textInput.value = '';
       addButton.disabled = true;
     });
-  </script> 
+  
+    // Обработчик Enter
+    textInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey && !addButton.disabled) {
+        e.preventDefault();
+        addButton.click();
+      }
+    });
+  
+    // Первоначальный рендер
+    renderComments();
+  </script>
 </html>
