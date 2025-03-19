@@ -106,7 +106,7 @@
     const addButton = document.querySelector('.add-form-button');
     const commentsList = document.querySelector('.comments');
   
-    // Функция экранирования HTML
+    // Функция экранирования HTML (перенесена в рендер)
     const escapeHtml = (text) => {
       return text
         .replaceAll('&', '&amp;')
@@ -121,7 +121,7 @@
       commentsList.innerHTML = comments.map(comment => `
         <li class="comment" data-id="${comment.id}">
           <div class="comment-header">
-            <div>${escapeHtml(comment.name)}</div>
+            <div>${escapeHtml(comment.name)}</div> <!-- Экранирование только здесь -->
             <div>${comment.date}</div>
           </div>
           <div class="comment-body">
@@ -135,7 +135,23 @@
           </div>
         </li>
       `).join('');
+  
+      // Навешиваем обработчики лайков после рендера
+      document.querySelectorAll('.like-button').forEach(button => {
+        button.addEventListener('click', handleLike);
+      });
     }
+  
+    // Обработчик лайков
+    const handleLike = (e) => {
+      const commentId = Number(e.target.closest('.comment').dataset.id);
+      const comment = comments.find(c => c.id === commentId);
+      
+      comment.isLiked = !comment.isLiked;
+      comment.likes += comment.isLiked ? 1 : -1;
+      
+      renderComments();
+    };
   
     // Обработчик клика по комментарию
     commentsList.addEventListener('click', (e) => {
@@ -147,26 +163,10 @@
       const commentId = Number(commentElement.dataset.id);
       const comment = comments.find(c => c.id === commentId);
       
-      // Заменяем предыдущую цитату
-      textInput.value = `@${escapeHtml(comment.name)}: ${escapeHtml(comment.text)}\n\n`;
+      textInput.value = `@${comment.name}: ${comment.text}\n\n`;
       replyToId = commentId;
       
       textInput.focus();
-    });
-  
-    // Обработчик лайков
-    commentsList.addEventListener('click', (e) => {
-      if (e.target.classList.contains('like-button')) {
-        e.stopPropagation();
-        
-        const commentId = Number(e.target.closest('.comment').dataset.id);
-        const comment = comments.find(c => c.id === commentId);
-        
-        comment.isLiked = !comment.isLiked;
-        comment.likes += comment.isLiked ? 1 : -1;
-        
-        renderComments();
-      }
     });
   
     // Валидация формы
@@ -181,8 +181,8 @@
     addButton.addEventListener('click', () => {
       const newComment = {
         id: Date.now(),
-        name: escapeHtml(nameInput.value.trim()),
-        text: escapeHtml(textInput.value.trim()),
+        name: nameInput.value.trim(), // Без экранирования при сохранении
+        text: textInput.value.trim(), // Без экранирования при сохранении
         date: new Date().toLocaleDateString('ru-RU', {
           day: '2-digit',
           month: '2-digit',
@@ -198,7 +198,6 @@
       comments.push(newComment);
       renderComments();
       
-      // Сброс формы
       nameInput.value = '';
       textInput.value = '';
       replyToId = null;
