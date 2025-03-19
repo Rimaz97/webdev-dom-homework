@@ -65,58 +65,155 @@
 
   <script>
     "use strict";
-  // Находим элементы DOM
-  const nameInput = document.querySelector('.add-form-name');
-  const textInput = document.querySelector('.add-form-text');
-  const addButton = document.querySelector('.add-form-button');
-  const commentsList = document.querySelector('.comments');
-
-  // Блокируем кнопку при загрузке
-  addButton.disabled = true;
-
-  // Функция валидации
-  const validateForm = () => {
-    const isNameValid = nameInput.value.trim().length > 0;
-    const isTextValid = textInput.value.trim().length > 0;
-    addButton.disabled = !(isNameValid && isTextValid);
-  };
-
-  // Обработчики событий
-  nameInput.addEventListener('input', validateForm);
-  textInput.addEventListener('input', validateForm);
-
-  addButton.addEventListener('click', () => {
-    // Собираем данные
-    const userName = nameInput.value.trim();
-    const commentText = textInput.value.trim();
-    const commentDate = new Date().toLocaleString();
-
-    // Шаблон комментария (на основе существующего в HTML)
-    const commentTemplate = `
-      <div class="comment">
-        <div class="comment-header">
-          <div>${userName}</div>
-          <div>${commentDate}</div>
-        </div>
-        <div class="comment-body">
-          ${commentText.replace(/\n/g, '<br>')}
-        </div>
-        <div class="comment-footer">
-          <div class="likes">
-            <span class="likes-counter">0</span>
-            <button class="like-button"></button>
+  
+    // Исходный массив комментариев
+    let comments = [
+      {
+        id: 1,
+        name: 'Глеб Фокин',
+        text: 'Это будет первый комментарий на этой странице',
+        date: new Date().toLocaleDateString('ru-RU', {
+          day: '2-digit',
+          month: '2-digit',
+          year: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        likes: 3,
+        isLiked: false
+      },
+      {
+        id: 2,
+        name: 'Варвара Н.',
+        text: 'Мне нравится как оформлена эта страница! ❤',
+        date: new Date().toLocaleDateString('ru-RU', {
+          day: '2-digit',
+          month: '2-digit',
+          year: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        likes: 75,
+        isLiked: true
+      }
+    ];
+  
+    let replyToId = null;
+  
+    // Элементы DOM
+    const nameInput = document.querySelector('.add-form-name');
+    const textInput = document.querySelector('.add-form-text');
+    const addButton = document.querySelector('.add-form-button');
+    const commentsList = document.querySelector('.comments');
+  
+    // Функция экранирования HTML
+    const escapeHtml = (text) => {
+      return text
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    };
+  
+    // Функция рендера комментариев
+    function renderComments() {
+      commentsList.innerHTML = comments.map(comment => `
+        <li class="comment" data-id="${comment.id}">
+          <div class="comment-header">
+            <div>${escapeHtml(comment.name)}</div>
+            <div>${comment.date}</div>
           </div>
-        </div>
-      </div>
-    `;
-
-    // Добавляем комментарий строго через innerHTML
-    commentsList.innerHTML += commentTemplate;
-
-    // Очищаем форму
-    nameInput.value = '';
-    textInput.value = '';
-    addButton.disabled = true;
-  });
+          <div class="comment-body">
+            <div class="comment-text">${escapeHtml(comment.text).replace(/\n/g, '<br>')}</div>
+          </div>
+          <div class="comment-footer">
+            <div class="likes">
+              <span class="likes-counter">${comment.likes}</span>
+              <button class="like-button ${comment.isLiked ? '-active-like' : ''}"></button>
+            </div>
+          </div>
+        </li>
+      `).join('');
+    }
+  
+    // Обработчик клика по комментарию
+    commentsList.addEventListener('click', (e) => {
+      const commentElement = e.target.closest('.comment');
+      if (!commentElement) return;
+      
+      if (e.target.classList.contains('like-button')) return;
+  
+      const commentId = Number(commentElement.dataset.id);
+      const comment = comments.find(c => c.id === commentId);
+      
+      // Заменяем предыдущую цитату
+      textInput.value = `@${escapeHtml(comment.name)}: ${escapeHtml(comment.text)}\n\n`;
+      replyToId = commentId;
+      
+      textInput.focus();
+    });
+  
+    // Обработчик лайков
+    commentsList.addEventListener('click', (e) => {
+      if (e.target.classList.contains('like-button')) {
+        e.stopPropagation();
+        
+        const commentId = Number(e.target.closest('.comment').dataset.id);
+        const comment = comments.find(c => c.id === commentId);
+        
+        comment.isLiked = !comment.isLiked;
+        comment.likes += comment.isLiked ? 1 : -1;
+        
+        renderComments();
+      }
+    });
+  
+    // Валидация формы
+    const validateForm = () => {
+      addButton.disabled = !(nameInput.value.trim() && textInput.value.trim());
+    };
+  
+    nameInput.addEventListener('input', validateForm);
+    textInput.addEventListener('input', validateForm);
+  
+    // Обработчик отправки формы
+    addButton.addEventListener('click', () => {
+      const newComment = {
+        id: Date.now(),
+        name: escapeHtml(nameInput.value.trim()),
+        text: escapeHtml(textInput.value.trim()),
+        date: new Date().toLocaleDateString('ru-RU', {
+          day: '2-digit',
+          month: '2-digit',
+          year: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        likes: 0,
+        isLiked: false,
+        parentId: replyToId
+      };
+  
+      comments.push(newComment);
+      renderComments();
+      
+      // Сброс формы
+      nameInput.value = '';
+      textInput.value = '';
+      replyToId = null;
+      addButton.disabled = true;
+    });
+  
+    // Обработчик Enter
+    textInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey && !addButton.disabled) {
+        e.preventDefault();
+        addButton.click();
+      }
+    });
+  
+    // Первоначальный рендер
+    renderComments();
   </script>
 </html>
