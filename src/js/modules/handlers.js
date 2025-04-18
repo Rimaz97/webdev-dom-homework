@@ -1,4 +1,5 @@
-import { comments, getReplyToId, setReplyToId } from "./comments-data.js";
+import { postComment } from "./api.js";
+import { comments, setReplyToId, fetchComments } from "./state.js";
 import { renderComments } from "./render.js";
 
 let handlersInitialized = false;
@@ -12,7 +13,6 @@ const initEventListeners = () => {
   const addButton = document.querySelector(".add-form-button");
   const commentsList = document.querySelector(".comments");
 
-  // Блокировка кнопки при инициализации
   addButton.disabled = true;
 
   const validateForm = () => {
@@ -24,16 +24,19 @@ const initEventListeners = () => {
   nameInput.addEventListener("input", validateForm);
   textInput.addEventListener("input", validateForm);
 
+  // Обработчик лайков
   commentsList.addEventListener("click", (e) => {
     if (e.target.classList.contains("like-button")) {
       const commentId = Number(e.target.closest(".comment").dataset.id);
       const comment = comments.find((c) => c.id === commentId);
       comment.isLiked = !comment.isLiked;
       comment.likes += comment.isLiked ? 1 : -1;
-      renderComments();
+      e.target.classList.toggle("-active-like");
+      e.target.previousElementSibling.textContent = comment.likes;
     }
   });
 
+  // Обработчик ответа (оставлен как задел на будущее)
   commentsList.addEventListener("click", (e) => {
     const commentElement = e.target.closest(".comment");
     if (!commentElement || e.target.classList.contains("like-button")) return;
@@ -41,48 +44,42 @@ const initEventListeners = () => {
     const commentId = Number(commentElement.dataset.id);
     const comment = comments.find((c) => c.id === commentId);
     textInput.value = `@${comment.name}: ${comment.text}\n\n`;
-    setReplyToId(commentId);
+    setReplyToId(commentId); // Оставили только установку ID
     textInput.focus();
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
     const name = nameInput.value.trim();
     const text = textInput.value.trim();
 
-    if (!name || !text) {
-      alert("Поля имени и комментария обязательны для заполнения!");
-      return;
+    if (!name || !text) return;
+
+    try {
+      await postComment({
+        name,
+        text,
+        // parentId: getReplyToId() - удалено
+      });
+
+      await fetchComments();
+      renderComments();
+
+      nameInput.value = "";
+      textInput.value = "";
+      setReplyToId(null);
+      addButton.disabled = true;
+    } catch (error) {
+      alert(`Ошибка: ${error.message}`);
     }
-
-    comments.push({
-      id: Date.now(),
-      name,
-      text,
-      date: new Date().toLocaleDateString("ru-RU", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      likes: 0,
-      isLiked: false,
-      parentId: getReplyToId(),
-    });
-
-    nameInput.value = "";
-    textInput.value = "";
-    setReplyToId(null);
-    addButton.disabled = true;
-    renderComments();
   };
 
   addButton.addEventListener("click", handleSubmit);
-
   textInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey && !addButton.disabled) {
       e.preventDefault();
-      handleSubmit();
+      handleSubmit(e);
     }
   });
 };
