@@ -1,7 +1,10 @@
 import { getComments } from "./api.js";
 
-export let comments = [];
-export let isLoading = true;
+export const state = {
+  comments: [],
+  isLoading: true,
+  isAdding: false,
+};
 let _replyToId = null;
 
 export const getReplyToId = () => _replyToId;
@@ -10,11 +13,21 @@ export const setReplyToId = (id) => {
 };
 
 export async function fetchComments() {
+  state.isLoading = true;
   try {
-    comments = await getComments();
-    isLoading = false;
+    state.comments = await getComments();
+    state.isLoading = false;
   } catch (error) {
-    isLoading = false;
+    state.isLoading = false;
     throw error;
   }
+}
+
+// Функция задержки для имитации API
+export function delay(interval = 300) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve();
+    }, interval);
+  });
 }

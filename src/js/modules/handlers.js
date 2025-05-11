@@ -1,5 +1,5 @@
 import { postComment } from "./api.js";
-import { comments, setReplyToId, fetchComments } from "./state.js";
+import { state, setReplyToId, fetchComments, delay } from "./state.js";
 import { renderComments } from "./render.js";
 
 let handlersInitialized = false;
@@ -24,27 +24,41 @@ const initEventListeners = () => {
   nameInput.addEventListener("input", validateForm);
   textInput.addEventListener("input", validateForm);
 
-  // Обработчик лайков
-  commentsList.addEventListener("click", (e) => {
+  // Обработчик лайков с анимацией и задержкой
+  commentsList.addEventListener("click", async (e) => {
     if (e.target.classList.contains("like-button")) {
       const commentId = Number(e.target.closest(".comment").dataset.id);
-      const comment = comments.find((c) => c.id === commentId);
-      comment.isLiked = !comment.isLiked;
-      comment.likes += comment.isLiked ? 1 : -1;
-      e.target.classList.toggle("-active-like");
-      e.target.previousElementSibling.textContent = comment.likes;
+      const comment = state.comments.find((c) => c.id === commentId);
+
+      // Если лайк уже в процессе - игнорируем клик
+      if (comment.isLikeLoading) return;
+
+      comment.isLikeLoading = true;
+      renderComments();
+
+      try {
+        await delay(1000); // имитация задержки
+
+        comment.likes = comment.isLiked ? comment.likes - 1 : comment.likes + 1;
+        comment.isLiked = !comment.isLiked;
+      } catch (error) {
+        alert("Ошибка при обработке лайка");
+      } finally {
+        comment.isLikeLoading = false;
+        renderComments();
+      }
     }
   });
 
-  // Обработчик ответа (оставлен как задел на будущее)
+  // Обработчик ответа
   commentsList.addEventListener("click", (e) => {
     const commentElement = e.target.closest(".comment");
     if (!commentElement || e.target.classList.contains("like-button")) return;
 
     const commentId = Number(commentElement.dataset.id);
-    const comment = comments.find((c) => c.id === commentId);
+    const comment = state.comments.find((c) => c.id === commentId);
     textInput.value = `@${comment.name}: ${comment.text}\n\n`;
-    setReplyToId(commentId); // Оставили только установку ID
+    setReplyToId(commentId);
     textInput.focus();
   });
 
@@ -56,11 +70,13 @@ const initEventListeners = () => {
 
     if (!name || !text) return;
 
+    state.isAdding = true;
+    renderComments();
+
     try {
       await postComment({
         name,
         text,
-        // parentId: getReplyToId() - удалено
       });
 
       await fetchComments();
@@ -72,6 +88,9 @@ const initEventListeners = () => {
       addButton.disabled = true;
     } catch (error) {
       alert(`Ошибка: ${error.message}`);
+    } finally {
+      state.isAdding = false;
+      renderComments();
     }
   };
 

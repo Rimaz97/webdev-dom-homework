@@ -3,6 +3,7 @@ import { initHandlers } from "./modules/handlers.js";
 import { fetchComments } from "./modules/state.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
+  renderComments(); // сразу показываем лоадер
   try {
     await fetchComments();
     renderComments();
