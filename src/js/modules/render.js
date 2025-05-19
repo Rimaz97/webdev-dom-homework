@@ -1,6 +1,7 @@
 import { state } from "./state.js";
 import { sanitize } from "./sanitize.js";
 
+// renderComments: Отрисовывает комментарии.
 export const renderComments = () => {
   const commentsList = document.querySelector(".comments");
   const form = document.querySelector(".add-form");
@@ -30,21 +31,21 @@ export const renderComments = () => {
       });
 
       return `
-      <li class="comment" data-id="${comment.id}">
-        <div class="comment-header">
-          <div>${sanitize(comment.name || "Аноним")}</div>
-          <div>${date}</div>
-        </div>
-        <div class="comment-body">
-          <div class="comment-text">${sanitize(comment.text).replace(/\n/g, "<br>")}</div>
-        </div>
-        <div class="comment-footer">
-          <div class="likes">
-            <span class="likes-counter">${comment.likes}</span>
-            <button class="like-button ${comment.isLiked ? "-active-like" : ""} ${comment.isLikeLoading ? "-loading-like" : ""}"></button>
+        <li class="comment" data-id="${comment.id}">
+          <div class="comment-header">
+            <div>${sanitize(comment.name || "Аноним")}</div>
+            <div>${date}</div>
           </div>
-        </div>
-      </li>
+          <div class="comment-body">
+            <div class="comment-text">${sanitize(comment.text).replace(/\n/g, "<br>")}</div>
+          </div>
+          <div class="comment-footer">
+            <div class="likes">
+              <span class="likes-counter">${comment.likes}</span>
+              <button class="like-button ${comment.isLiked ? "-active-like" : ""} ${comment.isLikeLoading ? "-loading-like" : ""}"></button>
+            </div>
+          </div>
+        </li>
       `;
     })
     .join("");

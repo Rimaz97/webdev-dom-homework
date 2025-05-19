@@ -1,3 +1,4 @@
+// sanitize: Экранирует HTML.
 export const sanitize = (text) => {
   return text
     .replaceAll("&", "&amp;")

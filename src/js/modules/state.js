@@ -5,13 +5,18 @@ export const state = {
   isLoading: true,
   isAdding: false,
 };
+
 let _replyToId = null;
 
+// getReplyToId: Возвращает id ответа.
 export const getReplyToId = () => _replyToId;
+
+// setReplyToId: Устанавливает id ответа.
 export const setReplyToId = (id) => {
   _replyToId = id;
 };
 
+// fetchComments: Загружает комментарии.
 export async function fetchComments() {
   state.isLoading = true;
   try {
@@ -19,11 +24,19 @@ export async function fetchComments() {
     state.isLoading = false;
   } catch (error) {
     state.isLoading = false;
+    // показываем ошибку
+    if (error.message === "Failed to fetch") {
+      alert("Кажется, у вас сломался интернет, попробуйте позже");
+    } else if (error.message === "500") {
+      alert("Сервер сломался, попробуй позже");
+    } else {
+      alert(error.message);
+    }
     throw error;
   }
 }
 
-// Функция задержки для имитации API
+// delay: Создаёт задержку.
 export function delay(interval = 300) {
   return new Promise((resolve) => {
     setTimeout(() => {
