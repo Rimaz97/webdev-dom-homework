@@ -1,14 +1,18 @@
-import { renderComments } from "./modules/render.js";
-import { initHandlers } from "./modules/handlers.js";
-import { fetchComments } from "./modules/state.js";
+import { fetchComments, state } from "./state.js";
+import { renderComments } from "./render.js";
 
-document.addEventListener("DOMContentLoaded", async () => {
-  renderComments(); // сразу показываем лоадер
+// Восстанавливаем пользователя из LocalStorage
+const savedUser = localStorage.getItem("user");
+if (savedUser) {
   try {
-    await fetchComments();
-    renderComments();
-    initHandlers();
-  } catch (error) {
-    alert("Ошибка при загрузке комментариев: " + error.message);
+    const { token, userName } = JSON.parse(savedUser);
+    state.token = token;
+    state.userName = userName;
+  } catch (e) {
+    // Если localStorage битый — очищаем
+    localStorage.removeItem("user");
   }
-});
+}
+
+// При загрузке страницы — получаем комментарии и рендерим
+fetchComments().then(renderComments);
