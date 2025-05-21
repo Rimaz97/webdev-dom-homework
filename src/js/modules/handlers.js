@@ -4,6 +4,7 @@ import { renderComments } from "./render.js";
 
 let handlersInitialized = false;
 
+// initEventListeners: Инициализирует обработчики событий.
 const initEventListeners = () => {
   if (handlersInitialized) return;
   handlersInitialized = true;
@@ -15,6 +16,7 @@ const initEventListeners = () => {
 
   addButton.disabled = true;
 
+  // validateForm: Валидирует форму.
   const validateForm = () => {
     addButton.disabled = !(nameInput.value.trim() && textInput.value.trim());
   };
@@ -24,21 +26,19 @@ const initEventListeners = () => {
   nameInput.addEventListener("input", validateForm);
   textInput.addEventListener("input", validateForm);
 
-  // Обработчик лайков с анимацией и задержкой
+  // [Анонимная функция — обработчик лайков]: Обрабатывает лайки.
   commentsList.addEventListener("click", async (e) => {
     if (e.target.classList.contains("like-button")) {
       const commentId = Number(e.target.closest(".comment").dataset.id);
       const comment = state.comments.find((c) => c.id === commentId);
 
-      // Если лайк уже в процессе - игнорируем клик
       if (comment.isLikeLoading) return;
 
       comment.isLikeLoading = true;
       renderComments();
 
       try {
-        await delay(1000); // имитация задержки
-
+        await delay(1000);
         comment.likes = comment.isLiked ? comment.likes - 1 : comment.likes + 1;
         comment.isLiked = !comment.isLiked;
       } catch (error) {
@@ -50,7 +50,7 @@ const initEventListeners = () => {
     }
   });
 
-  // Обработчик ответа
+  // [Анонимная функция — обработчик ответа]: Обрабатывает ответы.
   commentsList.addEventListener("click", (e) => {
     const commentElement = e.target.closest(".comment");
     if (!commentElement || e.target.classList.contains("like-button")) return;
@@ -62,6 +62,7 @@ const initEventListeners = () => {
     textInput.focus();
   });
 
+  // handleSubmit: Отправляет форму.
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -82,12 +83,21 @@ const initEventListeners = () => {
       await fetchComments();
       renderComments();
 
+      // очищаем форму только при успешной отправке
       nameInput.value = "";
       textInput.value = "";
       setReplyToId(null);
       addButton.disabled = true;
     } catch (error) {
-      alert(`Ошибка: ${error.message}`);
+      if (error.message === "400") {
+        alert("Имя и комментарий должны быть не короче 3 символов");
+      } else if (error.message === "500") {
+        alert("Сервер сломался, попробуй позже");
+      } else if (error.message === "network") {
+        alert("Кажется, у вас сломался интернет, попробуйте позже");
+      } else {
+        alert(`Ошибка: ${error.message}`);
+      }
     } finally {
       state.isAdding = false;
       renderComments();
@@ -103,6 +113,7 @@ const initEventListeners = () => {
   });
 };
 
+// initHandlers: Запускает обработчики.
 export const initHandlers = () => {
   initEventListeners();
 };
