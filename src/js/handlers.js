@@ -82,18 +82,19 @@ const initEventListeners = () => {
     });
   }
 
-  // --- Обработчик лайков ---
+  // --- Единый обработчик для лайков и цитирования ---
   if (commentsList) {
     commentsList.addEventListener("click", async (e) => {
-      if (e.target.classList.contains("like-button")) {
-        const commentElement = e.target.closest(".comment");
-        if (!commentElement) return;
-        const commentId = Number(commentElement.dataset.id);
-        const comment = state.comments.find((c) => c.id === commentId);
+      const commentElement = e.target.closest(".comment");
+      if (!commentElement) return;
 
-        if (!comment) return;
+      const commentId = commentElement.dataset.id; // Теперь строка, а не число
+      const comment = state.comments.find((c) => c.id == commentId); // Используем == вместо ===
+      if (!comment) return;
+
+      // Лайк
+      if (e.target.closest(".like-button")) {
         if (comment.isLikeLoading) return;
-
         comment.isLikeLoading = true;
         renderComments();
 
@@ -109,17 +110,10 @@ const initEventListeners = () => {
           comment.isLikeLoading = false;
           renderComments();
         }
+        return;
       }
-    });
 
-    // --- Обработчик ответа (цитаты) ---
-    commentsList.addEventListener("click", (e) => {
-      const commentElement = e.target.closest(".comment");
-      if (!commentElement || e.target.classList.contains("like-button")) return;
-
-      const commentId = Number(commentElement.dataset.id);
-      const comment = state.comments.find((c) => c.id === commentId);
-      if (!comment) return;
+      // Цитирование (если клик не по лайку)
       const textInput = document.querySelector(".add-form-text");
       if (!textInput) return;
       textInput.value = `@${comment.name}: ${comment.text}\n\n`;
