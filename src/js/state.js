@@ -4,6 +4,8 @@ export const state = {
   comments: [],
   isLoading: true,
   isAdding: false,
+  token: null, // токен пользователя
+  userName: null, // имя пользователя
 };
 
 let _replyToId = null;
@@ -20,7 +22,8 @@ export const setReplyToId = (id) => {
 export async function fetchComments() {
   state.isLoading = true;
   try {
-    state.comments = await getComments();
+    const comments = await getComments();
+    state.comments = comments;
     state.isLoading = false;
   } catch (error) {
     state.isLoading = false;
